@@ -1,0 +1,36 @@
+{
+  "name": "capability-cli",
+  "version": "0.0.0",
+  "description": "Capability Services Command Line Interface (CLI)",
+  "bin": {
+    "capi": "bin/cli.js"
+  },
+  "dependencies": {
+    "capability-sdk": "0.2.2",
+    "capability-uri": "0.3.0",
+    "joi": "13.0.2",
+    "js-yaml": "3.10.0",
+    "prompt": "1.0.0",
+    "semver": "5.4.1",
+    "yargs": "10.0.3"
+  },
+  "contributors": [
+    "Tristan Slominski <tristan.slominski@gmail.com>"
+  ],
+  "licenses": [
+    {
+      "type": "Apache 2.0",
+      "url": "http://github.com/capabilityio/capability-cli/raw/master/LICENSE"
+    }
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:capabilityio/capability-cli.git"
+  },
+  "keywors": [
+    "capability",
+    "capabilityio",
+    "cli",
+    "command"
+  ]
+}
