@@ -51,7 +51,7 @@ exports.builder = function(yargs)
                     {
                         throw new Error(`--limit must be greater than 0`);
                     }
-                    return opt;
+                    return parseInt(opt);
                 },
                 requiresArg: true,
                 type: "number"
@@ -70,13 +70,21 @@ exports.handler = function(args)
             }
         }
     );
-    service.query(capability,
+    const params =
+    {
+        id: args.id,
+        lastId: args["last-id"],
+        limit: args.limit
+    };
+    Object.keys(params).map(key =>
         {
-            id: args.id,
-            lastId: args["last-id"],
-            limit: args.limit
-        },
-        (error, response) =>
+            if (params[key] === undefined)
+            {
+                delete params[key];
+            }
+        }
+    );
+    service.query(capability, params, (error, response) =>
         {
             if (error)
             {
