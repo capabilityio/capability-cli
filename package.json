@@ -6,7 +6,7 @@
     "capi": "bin/cli.js"
   },
   "dependencies": {
-    "capability-sdk": "0.2.2",
+    "capability-sdk": "0.3.1",
     "capability-uri": "0.3.0",
     "joi": "13.1.1",
     "js-yaml": "3.10.0",
@@ -17,12 +17,7 @@
   "contributors": [
     "Tristan Slominski <tristan.slominski@gmail.com>"
   ],
-  "licenses": [
-    {
-      "type": "Apache 2.0",
-      "url": "http://github.com/capabilityio/capability-cli/raw/master/LICENSE"
-    }
-  ],
+  "license": "Apache-2.0",
   "repository": {
     "type": "git",
     "url": "git@github.com:capabilityio/capability-cli.git"
