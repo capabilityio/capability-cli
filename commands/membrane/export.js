@@ -52,9 +52,12 @@ exports.builder = function(yargs)
                 },
                 conflicts:
                 [
-                    "allow-query", "header", "cap1-hmac-sha512-key",
-                    "cap1-hmac-sha512-key-id", "method", "timeout-ms", "tls-ca",
-                    "tls-cert", "tls-key", "tls-reject-unauthorized", "uri"
+                    "allow-query", "aws4-hmac-sha256-aws-access-key-id",
+                    "aws4-hmac-sha256-region", "aws4-hmac-sha256-service",
+                    "aws4-hmac-sha256-secret-access-key", "header",
+                    "cap1-hmac-sha512-key", "cap1-hmac-sha512-key-id", "method",
+                    "timeout-ms", "tls-ca", "tls-cert", "tls-key",
+                    "tls-reject-unauthorized", "uri"
                 ],
                 requiresArg: true,
                 type: "string"
@@ -99,11 +102,94 @@ exports.builder = function(yargs)
                 type: "array"
             }
         )
+        .option("aws4-hmac-sha256-aws-access-key-id",
+            {
+                group,
+                describe: "AWS Secret Key Id for AWS4-HMAC-SHA256 signature.",
+                conflicts:
+                [
+                    "capability-to-export", "cap1-hmac-sha512-key",
+                    "cap1-hmac-sha512-key-id"
+                ],
+                implies: "uri",
+                requiresArg: true,
+                type: "string",
+                implies:
+                [
+                    "aws4-hmac-sha256-region", "aws4-hmac-sha256-service",
+                    "aws4-hmac-sha256-secret-access-key"
+                ]
+            }
+        )
+        .option("aws4-hmac-sha256-region",
+            {
+                group,
+                describe: "AWS region for AWS4-HMAC-SHA256 signature.",
+                conflicts:
+                [
+                    "capability-to-export", "cap1-hmac-sha512-key",
+                    "cap1-hmac-sha512-key-id"
+                ],
+                implies: "uri",
+                requiresArg: true,
+                type: "string",
+                implies:
+                [
+                    "aws4-hmac-sha256-aws-access-key-id",
+                    "aws4-hmac-sha256-service",
+                    "aws4-hmac-sha256-secret-access-key"
+                ]
+            }
+        )
+        .option("aws4-hmac-sha256-service",
+            {
+                group,
+                describe: "AWS service for AWS4-HMAC-SHA256 signature.",
+                conflicts:
+                [
+                    "capability-to-export", "cap1-hmac-sha512-key",
+                    "cap1-hmac-sha512-key-id"
+                ],
+                implies: "uri",
+                requiresArg: true,
+                type: "string",
+                implies:
+                [
+                    "aws4-hmac-sha256-aws-access-key-id",
+                    "aws4-hmac-sha256-region",
+                    "aws4-hmac-sha256-secret-access-key"
+                ]
+            }
+        )
+        .option("aws4-hmac-sha256-secret-access-key",
+            {
+                group,
+                describe: "AWS Secret Access Key for AWS4-HMAC-SHA256 signature.",
+                conflicts:
+                [
+                    "capability-to-export", "cap1-hmac-sha512-key",
+                    "cap1-hmac-sha512-key-id"
+                ],
+                implies: "uri",
+                requiresArg: true,
+                type: "string",
+                implies:
+                [
+                    "aws4-hmac-sha256-aws-access-key-id",
+                    "aws4-hmac-sha256-region", "aws4-hmac-sha256-service"
+                ]
+            }
+        )
         .option("cap1-hmac-sha512-key",
             {
                 group,
                 describe: "Base64url encoded secret key bytes for CAP1-HMAC-SHA512 signature.",
-                conflicts: "capability-to-export",
+                conflicts:
+                [
+                    "aws4-hmac-sha256-aws-access-key-id",
+                    "aws4-hmac-sha256-region", "aws4-hmac-sha256-service",
+                    "aws4-hmac-sha256-secret-access-key", "capability-to-export"
+                ],
                 implies: "uri",
                 requiresArg: true,
                 type: "string",
@@ -114,7 +200,12 @@ exports.builder = function(yargs)
             {
                 group,
                 describe: "Secret key id for CAP1-HMAC-SHA512 signature.",
-                conflicts: "capability-to-export",
+                conflicts:
+                [
+                    "aws4-hmac-sha256-aws-access-key-id",
+                    "aws4-hmac-sha256-region", "aws4-hmac-sha256-service",
+                    "aws4-hmac-sha256-secret-access-key", "capability-to-export"
+                ],
                 implies: "uri",
                 requiresArg: true,
                 type: "string",
@@ -220,6 +311,19 @@ exports.handler = function(args)
             {
                 key: args["cap1-hmac-sha512-key"],
                 keyId: args["cap1-hmac-sha512-key-id"]
+            }
+        };
+    }
+    if (args["aws4-hmac-sha256-aws-access-key-id"])
+    {
+        config.hmac =
+        {
+            "aws4-hmac-sha256":
+            {
+                awsAccessKeyId: args["aws4-hmac-sha256-aws-access-key-id"],
+                region: args["aws4-hmac-sha256-region"],
+                service: args["aws4-hmac-sha256-service"],
+                secretAccessKey: args["aws4-hmac-sha256-secret-access-key"]
             }
         };
     }
