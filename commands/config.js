@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 Capability LLC. All Rights Reserved.
+ * Copyright 2017-2018 Capability LLC. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,9 @@
 "use strict";
 
 const CapabilityUri = require("capability-uri");
+const configFs = require("capability-config-fs");
 const fs = require("fs");
-const os = require("os");
+const lockfile = require("lockfile");
 const path = require("path");
 const regions = require("../regions.js");
 const services = require("../services.js");
@@ -47,10 +48,6 @@ const builder = function(yargs)
 
 const handler = function(args) {};
 
-const CAPI_DIRECTORY_PATH = path.normalize(path.join(os.homedir(), ".capability"));
-const CAPI_CONFIG_PATH = path.normalize(path.join(CAPI_DIRECTORY_PATH, "config"));
-const CAPI_CREDENTIALS_PATH = path.normalize(path.join(CAPI_DIRECTORY_PATH, "credentials"));
-
 const CONFIG_PATTERNS =
 {
     region: new RegExp(`^\\s*(${regions.join("|")})\\s*$`)
@@ -71,41 +68,51 @@ const ensureCapabilityDirExists = () =>
 {
     try
     {
-        fs.statSync(CAPI_DIRECTORY_PATH);
+        fs.statSync(configFs.CAPABILITY_DIRECTORY_PATH);
     }
     catch (error)
     {
-        fs.mkdirSync(CAPI_DIRECTORY_PATH, 0o700);
+        fs.mkdirSync(configFs.CAPABILITY_DIRECTORY_PATH, 0o700);
     }
 };
 
-const loadConfig = () => loadYaml(CAPI_CONFIG_PATH);
-const loadCredentials = () => loadYaml(CAPI_CREDENTIALS_PATH);
+const loadConfig = () => loadYaml(
+    configFs.CAPABILITY_CONFIG_PATH,
+    configFs.CAPABILITY_CONFIG_LOCKFILE_PATH
+);
+const loadCredentials = () => loadYaml(
+    configFs.CAPABILITY_CREDENTIALS_PATH,
+    configFs.CAPABILITY_CREDENTIALS_LOCKFILE_PATH
+);
 
-const loadYaml = path =>
+const loadYaml = (path, lockPath) =>
 {
+    lockfile.lockSync(lockPath);
     try
     {
         const stat = fs.statSync(path);
         if (stat.isFile())
         {
-            const obj = {};
-            yaml.safeLoadAll(
-                fs.readFileSync(path, "utf8"),
-                doc =>
-                {
-                    if (doc.profile)
+            return yaml.safeLoadAll(fs.readFileSync(path, "utf8"))
+                .reduce((obj, doc) =>
                     {
-                        obj[doc.profile] = doc;
-                    }
-                }
-            );
-            return obj;
+                        if (doc.profile)
+                        {
+                            obj[doc.profile] = doc;
+                        }
+                        return obj;
+                    },
+                    {}
+                );
         }
     }
     catch (error)
     {
         return undefined;
+    }
+    finally
+    {
+        lockfile.unlockSync(lockPath);
     }
 };
 
@@ -128,30 +135,46 @@ const propertyExists = (obj, profile, service, property) =>
 
 const saveConfig = newConfig =>
 {
-    fs.writeFileSync(
-        CAPI_CONFIG_PATH,
-        Object.keys(newConfig)
-            .map(profile => yaml.safeDump(newConfig[profile]))
-            .join("---\n"),
-        {
-            encoding: "utf8",
-            mode: 0o600
-        }
-    );
+    lockfile.lockSync(configFs.CAPABILITY_CONFIG_LOCKFILE_PATH);
+    try
+    {
+        fs.writeFileSync(
+            configFs.CAPABILITY_CONFIG_PATH,
+            Object.keys(newConfig)
+                .map(profile => yaml.safeDump(newConfig[profile]))
+                .join("---\n"),
+            {
+                encoding: "utf8",
+                mode: 0o600
+            }
+        );
+    }
+    finally
+    {
+        lockfile.unlockSync(configFs.CAPABILITY_CONFIG_LOCKFILE_PATH);
+    }
 };
 
 const saveCredentials = newCredentials =>
 {
-    fs.writeFileSync(
-        CAPI_CREDENTIALS_PATH,
-        Object.keys(newCredentials)
-            .map(profile => yaml.safeDump(newCredentials[profile]))
-            .join("---\n"),
-        {
-            encoding: "utf8",
-            mode: 0o600
-        }
-    );
+    lockfile.lockSync(configFs.CAPABILITY_CREDENTIALS_LOCKFILE_PATH);
+    try
+    {
+        fs.writeFileSync(
+            CAPI_CREDENTIALS_PATH,
+            Object.keys(newCredentials)
+                .map(profile => yaml.safeDump(newCredentials[profile]))
+                .join("---\n"),
+            {
+                encoding: "utf8",
+                mode: 0o600
+            }
+        );
+    }
+    finally
+    {
+        lockfile.unlockSync(configFs.CAPABILITY_CREDENTIALS_LOCKFILE_PATH);
+    }
 }
 
 const secretPreview = (credentials, profile, service, name) =>
@@ -184,9 +207,6 @@ exports = Object.assign(exports,
         desc,
         builder,
         handler,
-        CAPI_CONFIG_PATH,
-        CAPI_CREDENTIALS_PATH,
-        CAPI_DIRECTORY_PATH,
         CONFIG_PATTERNS,
         CONFIG_PROPERTIES,
         capabilityExists,
