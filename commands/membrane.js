@@ -17,6 +17,8 @@
 
 const CapabilityURI = require("capability-uri");
 const config = require("./config.js");
+const fs = require("fs");
+const path = require("path");
 
 exports.command = "membrane <command>";
 
@@ -53,12 +55,12 @@ exports.builder = function(yargs)
                 type: "string"
             }
         )
-        .option("tls-self-signed",
+        .option("trustedCA-file-path",
             {
                 group,
-                describe: "Set to true to not check Membrane Service TLS certificate validity",
-                default: false,
-                type: "boolean"
+                describe: "File path to trusted Certificate Authorities in JSON format",
+                coerce: opt => JSON.parse(fs.readFileSync(path.normalize(opt), "utf8")),
+                type: "string"
             }
         );
 };

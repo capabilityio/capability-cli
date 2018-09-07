@@ -34,7 +34,7 @@ exports.handler = function(args)
         {
             tls:
             {
-                rejectUnauthorized: !args["tls-self-signed"]
+                trustedCA: args["trustedCA-file-path"]
             }
         }
     );
