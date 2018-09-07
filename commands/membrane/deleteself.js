@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 Capability LLC. All Rights Reserved.
+ * Copyright 2017-2018 Capability LLC. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
  */
 "use strict";
 
-const CapabilitySdk = require("capability-sdk");
+const CapabilitySDK = require("capability-sdk");
 const membrane = require("../membrane.js");
 
 exports.command = "deleteself";
@@ -30,7 +30,7 @@ exports.builder = function(yargs)
 exports.handler = function(args)
 {
     const capability = membrane.capability(args, "deleteSelf");
-    const service = new CapabilitySdk.Membrane(
+    const service = new CapabilitySDK.Membrane(
         {
             tls:
             {

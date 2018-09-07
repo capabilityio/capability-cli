@@ -15,7 +15,7 @@
  */
 "use strict";
 
-const CapabilityUri = require("capability-uri");
+const CapabilityURI = require("capability-uri");
 const configFs = require("capability-config-fs");
 const fs = require("fs");
 const lockfile = require("lockfile");
@@ -197,8 +197,8 @@ const secretPreview = (credentials, profile, service, name) =>
 
 const _secretPreview = secret =>
 {
-    const capabilityUri = CapabilityUri.parse(secret);
-    return `(...${capabilityUri.capabilityToken.serialize().slice(-5)})`;
+    const capabilityURI = CapabilityURI.parse(secret);
+    return `(...${capabilityURI.capabilityToken.serialize().slice(-5)})`;
 };
 
 exports = Object.assign(exports,

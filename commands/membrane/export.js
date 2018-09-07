@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 Capability LLC. All Rights Reserved.
+ * Copyright 2017-2018 Capability LLC. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,8 @@
  */
 "use strict";
 
-const CapabilitySdk = require("capability-sdk");
-const CapabilityUri = require("capability-uri");
+const CapabilitySDK = require("capability-sdk");
+const CapabilityURI = require("capability-uri");
 const membrane = require("../membrane.js");
 
 exports.command = "export";
@@ -43,8 +43,8 @@ exports.builder = function(yargs)
                 describe: "Existing capability to re-export through the membrane.",
                 coerce: opt =>
                 {
-                    const capabilityUri = CapabilityUri.parse(opt);
-                    if (!capabilityUri)
+                    const capabilityURI = CapabilityURI.parse(opt);
+                    if (!capabilityURI)
                     {
                         throw new Error(`Failed parsing capability-to-export`);
                     }
@@ -286,7 +286,7 @@ exports.builder = function(yargs)
 exports.handler = function(args)
 {
     const capability = membrane.capability(args, "export");
-    const service = new CapabilitySdk.Membrane(
+    const service = new CapabilitySDK.Membrane(
         {
             tls:
             {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 Capability LLC. All Rights Reserved.
+ * Copyright 2017-2018 Capability LLC. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
  */
 "use strict";
 
-const CapabilityUri = require("capability-uri");
+const CapabilityURI = require("capability-uri");
 const config = require("../config.js");
 const events = require("events");
 const prompt = require("prompt");
@@ -75,7 +75,7 @@ exports.handler = function(args)
                         schema.properties[name] =
                         {
                             description: `${name} capability: ${config.secretPreview(savedCredentials, args.profile, args.service, name)}`,
-                            pattern: CapabilityUri.NON_CUSTOM_URI_REGEX,
+                            pattern: CapabilityURI.NON_CUSTOM_URI_REGEX,
                             message: `Please enter your "${name}" capability for membrane service or skip by pressing enter`
                         }
                     }

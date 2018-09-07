@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 Capability LLC. All Rights Reserved.
+ * Copyright 2017-2018 Capability LLC. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
  */
 "use strict";
 
-const CapabilityUri = require("capability-uri");
+const CapabilityURI = require("capability-uri");
 const config = require("./config.js");
 
 exports.command = "membrane <command>";
@@ -33,8 +33,8 @@ exports.builder = function(yargs)
                 describe: "Capability to use.",
                 coerce: opt =>
                 {
-                    const capabilityUri = CapabilityUri.parse(opt);
-                    if (!capabilityUri)
+                    const capabilityURI = CapabilityURI.parse(opt);
+                    if (!capabilityURI)
                     {
                         throw new Error(`Failed parsing capability`);
                     }
