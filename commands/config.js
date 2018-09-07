@@ -21,7 +21,6 @@ const fs = require("fs");
 const lockfile = require("lockfile");
 const path = require("path");
 const regions = require("../regions.js");
-const services = require("../services.js");
 const yaml = require("js-yaml");
 
 const command = "config <command>";
@@ -58,6 +57,10 @@ const CONFIG_PROPERTIES =
 ];
 const SERVICE_CAPABILITIES =
 {
+    "certificate-manager":
+    [
+        "createDomain", "deleteSelf", "queryDomains"
+    ],
     membrane:
     [
         "create", "deleteSelf", "query"
@@ -161,7 +164,7 @@ const saveCredentials = newCredentials =>
     try
     {
         fs.writeFileSync(
-            CAPI_CREDENTIALS_PATH,
+            configFs.CAPABILITY_CREDENTIALS_PATH,
             Object.keys(newCredentials)
                 .map(profile => yaml.safeDump(newCredentials[profile]))
                 .join("---\n"),

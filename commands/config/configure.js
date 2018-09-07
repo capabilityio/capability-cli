@@ -66,22 +66,16 @@ exports.handler = function(args)
             }
         }
     }
-    switch (args.service)
-    {
-        case "membrane":
-            config.SERVICE_CAPABILITIES.membrane
-                .map(name =>
-                    {
-                        schema.properties[name] =
-                        {
-                            description: `${name} capability: ${config.secretPreview(savedCredentials, args.profile, args.service, name)}`,
-                            pattern: CapabilityURI.NON_CUSTOM_URI_REGEX,
-                            message: `Please enter your "${name}" capability for membrane service or skip by pressing enter`
-                        }
-                    }
-                );
-            break;
-    }
+    config.SERVICE_CAPABILITIES[args.service].map(name =>
+        {
+            schema.properties[name] =
+            {
+                description: `${name} capability: ${config.secretPreview(savedCredentials, args.profile, args.service, name)}`,
+                pattern: CapabilityURI.NON_CUSTOM_URI_REGEX,
+                message: `Please enter your "${name}" capability for ${args.service} service or skip by pressing enter`
+            }
+        }
+    );
     const workflow = new events.EventEmitter();
     setImmediate(() => workflow.emit("start"));
     workflow.on("start", () =>
