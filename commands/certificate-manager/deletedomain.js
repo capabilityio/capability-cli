@@ -38,12 +38,13 @@ exports.handler = function(args)
             }
         }
     );
-    service.deleteDomain(capability, error =>
+    service.deleteDomain(capability, (error, resp) =>
         {
             if (error)
             {
                 return certificateManager.error(error);
             }
+            console.log(JSON.stringify(resp, null, 2));
         }
     );
 };

@@ -7,7 +7,7 @@
   },
   "dependencies": {
     "capability-config-fs": "0.1.0",
-    "capability-sdk": "0.6.0",
+    "capability-sdk": "0.7.0",
     "capability-uri": "0.3.0",
     "joi": "13.6.0",
     "js-yaml": "3.12.0",

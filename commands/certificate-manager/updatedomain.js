@@ -84,12 +84,13 @@ exports.handler = function(args)
                 updateChallenge: args["update-challenge-capability"]
             }
         },
-        error =>
+        (error, resp) =>
         {
             if (error)
             {
                 return certificateManager.error(error);
             }
+            console.log(JSON.stringify(resp, null, 2));
         }
     );
 };

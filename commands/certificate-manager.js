@@ -24,7 +24,7 @@ exports.command = "certificate-manager <command>";
 
 exports.desc = "Certificate Manager Service operations.";
 
-exports.buider = function(yargs)
+exports.builder = function(yargs)
 {
     const group = "Certificate Manager:";
     return yargs.commandDir("certificate-manager")
