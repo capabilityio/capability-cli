@@ -16,7 +16,11 @@
 "use strict";
 
 const AWS = require("aws-sdk");
+const awsCommand = require("../aws.js");
+const CapabilitySDK = require("capability-sdk");
+const crypto = require("crypto");
 const events = require("events");
+const membraneCommand = require("../../../membrane.js");
 
 exports.command = "init";
 
@@ -26,6 +30,24 @@ exports.builder = function(yargs)
 {
     const group = "Initialize:";
     return yargs
+        .option("certificates-s3-bucket-name",
+            {
+                group,
+                describe: "Name for the S3 bucket that will contain your certificates.",
+                demandOption: true,
+                requiresArg: true,
+                type: "string"
+            }
+        )
+        .option("version",
+            {
+                group,
+                describe: "Version string to uniquely identify integration configuration.",
+                demandOption: true,
+                requiresArg: true,
+                type: "string"
+            }
+        );
 };
 
 exports.handler = function(args)
@@ -39,7 +61,257 @@ exports.handler = function(args)
     const workflow = new events.EventEmitter();
     setImmediate(() => workflow.emit("start",
         {
+            latest:
+            {
+                certificateRecipient: undefined,
+                challengeUpdater: undefined
+            }
         }
     ));
-    workflow.on("start", dataBag => workflow.emit("TODO", dataBag));
+    workflow.on("start", dataBag => workflow.emit("assume role if needed", dataBag));
+    workflow.on("assume role if needed", dataBag =>
+        {
+            if (args["aws-assume-role-account"])
+            {
+                return workflow.emit("assume role", dataBag);
+            }
+            return workflow.emit("setup aws-sdk", dataBag);
+        }
+    );
+    workflow.on("assume role", dataBag =>
+        {
+            const params =
+            {
+                DurationSeconds: 900, // smallest available as of 20171010
+                RoleArn: `arn:aws:iam::${args["aws-assume-role-account"]}:role/${args["aws-assume-role-name"]}`,
+                RoleSessionName: crypto.randomBytes(32).toString("hex")
+            };
+            AWS.config.credentials = new AWS.TemporaryCredentials(params);
+            return workflow.emit("setup aws-sdk", dataBag);
+        }
+    );
+    workflow.on("setup aws-sdk", dataBag =>
+        {
+            const conf =
+            {
+                region: args["aws-region"]
+            };
+            dataBag.aws =
+            {
+                cloudformation: new AWS.CloudFormation(conf),
+                s3: new AWS.S3(conf)
+            };
+            return workflow.emit("discover latest certificate-recipient version", dataBag);
+        }
+    );
+    workflow.on("discover latest certificate-recipient version", dataBag =>
+        {
+            const params =
+            {
+                Bucket: awsCommand.PUBLIC_LAMBDAS_S3_BUCKET,
+                Key: `${awsCommand.CERTIFICATE_RECIPIENT_COMPONENT}/latest`
+            };
+            dataBag.aws.s3.getObject(params, (error, data) =>
+                {
+                    if (error)
+                    {
+                        console.error(JSON.stringify(error, null, 2));
+                        return process.exit(1);
+                    }
+                    dataBag.latest.certificateRecipient = data.Body.toString("utf8");
+                    return workflow.emit("discover latest challenge-updater version", dataBag);
+                }
+            );
+        }
+    );
+    workflow.on("discover latest challenge-updater version", dataBag =>
+        {
+            const params =
+            {
+                Bucket: awsCommand.PUBLIC_LAMBDAS_S3_BUCKET,
+                Key: `${awsCommand.CHALLENGE_UPDATER_COMPONENT}/latest`
+            };
+            dataBag.aws.s3.getObject(params, (error, data) =>
+                {
+                    if (error)
+                    {
+                        console.error(JSON.stringify(error, null, 2));
+                        return process.exit(1);
+                    }
+                    dataBag.latest.challengeUpdater = data.Body.toString("utf8");
+                    return workflow.emit("read cloudformation template", dataBag);
+                }
+            );
+        }
+    );
+    workflow.on("read cloudformation template", dataBag =>
+        {
+            dataBag.template = fs.readFileSync(
+                path.normalize(
+                    path.join(
+                        __dirname, "cloudformation.yaml"
+                    )
+                )
+            ).toString("utf8");
+            return workflow.emit("create stack", dataBag);
+        }
+    );
+    workflow.on("create stack", dataBag =>
+        {
+            dataBag.stackName = `certificate-manager-integration-${args.version}`;
+            console.error(`Creating ${dataBag.stackName} AWS CloudFormation stack`);
+            const params =
+            {
+                StackName: dataBag.stackName,
+                TemplateBody: dataBag.template,
+                Capabilities:
+                [
+                    "CAPABILITY_IAM",
+                    "CAPABILITY_NAMED_IAM"
+                ],
+                Parameters:
+                [
+                    {
+                        ParameterKey: "CertificateRecipientLambdaVersion",
+                        ParameterValue: dataBag.latest.certificateRecipient
+                    },
+                    {
+                        ParameterKey: "CertificatesS3BucketName",
+                        ParameterValue: args["certificates-s3-bucket-name"]
+                    },
+                    {
+                        ParameterKey: "Route53DNSChallengeUpdaterLambdaVersion",
+                        ParameterValue: dataBag.latest.challengeUpdater
+                    },
+                    {
+                        ParameterKey: "Version",
+                        ParameterValue: args.version
+                    }
+                ],
+                Tags:
+                [
+                    {
+                        Key: "provider",
+                        Value: "capability.io"
+                    },
+                    {
+                        Key: "service",
+                        Value: "certificate-manager"
+                    },
+                    {
+                        Key: "service:component",
+                        Value: "aws-integration"
+                    },
+                    {
+                        Key: "service:component:version",
+                        Value: args.version
+                    }
+                ]
+            };
+            dataBag.aws.cloudformation.createStack(params, (error, data) =>
+                {
+                    if (error)
+                    {
+                        console.error(JSON.stringify(error, null, 2));
+                        return workflow.emit("show stack events", dataBag);
+                    }
+                    return workflow.emit("wait on stack creation", dataBag);
+                }
+            );
+        }
+    );
+    workflow.on("wait on stack creation", dataBag =>
+        {
+            console.error(`Waiting on ${dataBag.stackName} AWS CloudFormation stack`);
+            process.stderr.write("...");
+            let interval = setInterval(() => process.stderr.write("."), 5000);
+            const params =
+            {
+                StackName: dataBag.stackName
+            };
+            dataBag.aws.cloudformation.waitFor("stackCreateComplete", params, (error, data) =>
+                {
+                    clearInterval(interval);
+                    console.error();
+                    if (error)
+                    {
+                        console.error(JSON.stringify(error, null, 2));
+                        return workflow.emit("show stack events", dataBag);
+                    }
+                    console.error(`Creating ${dataBag.stackName} AWS CloudFormation stack SUCCEEDED`);
+                    dataBag.stack = data.Stacks[0];
+                    return workflow.emit("create membrane", dataBag);
+                }
+            );
+        }
+    );
+    workflow.on("create membrane", dataBag =>
+        {
+            const membraneName = `certificate-manager-integration-${args.version}`;
+            console.error(`Creating ${membraneName} membrane`);
+            const capability = membraneCommand.capability(args, "create");
+            const service = new CapabilitySDK.Membrane(
+                {
+                    tls:
+                    {
+                        trustedCA: args["trustedCA-file-path"]
+                    }
+                }
+            );
+            service.create(capability,
+                {
+                    id: membraneName
+                },
+                (error, response) =>
+                {
+                    if (error)
+                    {
+                        return membraneCommand.error(error);
+                    }
+                    console.error(`Creating ${membraneName} membrane SUCCEEDED`);
+                    dataBag.membrane = response;
+                    return workflow.emit("export certificate-recipient capability", dataBag);
+                }
+            );
+        }
+    );
+    workflow.on("export certificate-recipient capability", dataBag =>
+        {
+            // TODO
+        }
+    );
+    workflow.on("export challenge-updater capability", dataBag =>
+        {
+            // TODO
+        }
+    );
+    workflow.on("set active capabilities", dataBag =>
+        {
+            // TODO
+        }
+    );
+    workflow.on("show stack events", dataBag =>
+        {
+            const params =
+            {
+                StackName: dataBag.stackName
+            };
+            dataBag.aws.cloudformation.describeStackEvents(params, (error, data) =>
+                {
+                    if (error)
+                    {
+                        console.error();
+                        console.error(JSON.stringify(error, null, 2));
+                        console.error(`Unable to retrieve error details`);
+                        return;
+                    }
+                    console.error();
+                    console.error(
+                        data.StackEvents.map(event => `${event.Timestamp} ${event.ResourceStatus} ${event.ResourceType} ${event.ResourceStatusReason ? `- ${event.ResourceStatusReason}` : ""}`).join("\n")
+                    );
+                    return process.exit(1);
+                }
+            );
+        }
+    );
 };

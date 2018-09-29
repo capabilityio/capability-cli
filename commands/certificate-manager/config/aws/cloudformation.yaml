@@ -17,6 +17,26 @@ AWSTemplateFormatVersion: 2010-09-09
 
 Resources:
 
+  CertificateManagerServiceUser:
+    Type: AWS::IAM::User
+    Properties:
+      Policies:
+        - PolicyName: !Sub "certificate-manager-service-user-${Version}"
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action: "lambda:InvokeFunction"
+                Resource:
+                  - !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${CertificateRecipientLambda}"
+                  - !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${Route53DNSChallengeUpdaterLambda}"
+      UserName: !Sub "certificate-manager-service-${Version}"
+
+  CertificateManagerServiceUserAccessKey:
+    Type: AWS::IAM::AccessKey
+    Properties:
+      UserName: !Ref CertificateManagerServiceUser
+
   CertificateRecipientLambda:
     Type: AWS::Lambda::Function
     Properties:
@@ -69,6 +89,14 @@ Resources:
                   - !Sub
                     - "${CertificatesS3BucketArn}/key/*"
                     - CertificatesS3BucketArn: !GetAtt CertificatesS3Bucket.Arn
+              - Effect: Allow
+                Action:
+                  - "logs:CreateLogGroup"
+                  - "logs:CreateLogStream"
+                  - "logs:PutLogEvents"
+                Resource:
+                  - !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/certificate-manager-certificate-recipient-${Version}"
+                  - !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/certificate-manager-certificate-recipient-${Version}:*"
 
   CertificatesS3Bucket:
     Type: AWS::S3::Bucket
@@ -99,7 +127,6 @@ Resources:
                   - !Sub
                     - "${CertificateRecipientLambdaRoleId}:*"
                     - CertificateRecipientLambdaRoleId: !GetAtt CertificateRecipientLambdaRole.RoleId
-
 
   Route53DNSChallengeUpdaterLambda:
     Type: AWS::Lambda::Function
@@ -147,6 +174,14 @@ Resources:
                   - "route53:GetChange"
                 Resource:
                   - "*"
+              - Effect: Allow
+                Action:
+                  - "logs:CreateLogGroup"
+                  - "logs:CreateLogStream"
+                  - "logs:PutLogEvents"
+                Resource:
+                  - !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/certificate-manager-route53-dns-challenge-updater-${Version}"
+                  - !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/certificate-manager-route53-dns-challenge-updater-${Version}:*"
 
 Parameters:
 
@@ -183,6 +218,12 @@ Parameters:
     Type: String
     Description: Certificate S3 Bucket name to use
 
+  ReceiveCertificateCapability:
+    Type: String
+    Default: placeholder
+    Description: This integration's ReceiveCertificate capability
+    NoEcho: true
+
   Route53DNSChallengeUpdaterLambdaHandler:
     Type: String
     Default: "index.handle"
@@ -212,17 +253,39 @@ Parameters:
     Type: String
     Description: route53-dns-challenge-updater version to use
 
+  UpdateChallengeCapability:
+    Type: String
+    Default: placeholder
+    Description: This integration's UpdateChallenge capability
+    NoEcho: true
+
   Version:
     Type: String
     Description: Version string to uniquely identify this deployment
 
 Outputs:
 
+  CertificateManagerServiceUserAccessKeyId:
+    Description: CertificateManagerServiceUser AWS AccessKeyId
+    Value: !Ref CertificateManagerServiceUserAccessKey
+    Export:
+      Name: !Sub "${AWS::StackName}-CertificateManagerServiceUserAccessKey"
+
+  CertificateManagerServiceUserSecretAccessKey:
+    Description: CertificateManagerServiceUser AWS SecretAccessKey
+    Value: !GetAtt CertificateManagerServiceUserAccessKey.SecretAccessKey
+
   CertificateRecipientLambda:
     Description: certificate-recipient name
     Value: !Ref CertificateRecipientLambda
     Export:
       Name: !Sub "${AWS::StackName}-CertificateRecipientLambda"
+
+  CertificateRecipientLambdaArn:
+    Description: certificate-recipient ARN
+    Value: !GetAtt CertificateRecipientLambda.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-CertificateRecipientLambdaArn"
 
   CertificateRecipientLambdaVersion:
     Description: certificate-recipient version
@@ -235,17 +298,31 @@ Outputs:
     Export:
       Name: !Sub "${AWS::StackName}-CertificatesS3BucketArn"
 
+  ReceiveCertificateCapability:
+    Description: This integration's ReceiveCertificate capability
+    Value: !Ref ReceiveCertificateCapability
+
   Route53DNSChallengeUpdaterLambda:
     Description: route53-dns-challenge-updater name
     Value: !Ref Route53DNSChallengeUpdaterLambda
     Export:
       Name: !Sub "${AWS::StackName}-Route53DNSChallengeUpdaterLambda"
 
+  Route53DNSChallengeUpdaterLambdaArn:
+    Description: route53-dns-challenge-updater ARN
+    Value: !GetAtt Route53DNSChallengeUpdaterLambda.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-Route53DNSChallengeUpdaterLambdaArn"
+
   Route53DNSChallengeUpdaterLambdaVersion:
     Description: route53-dns-challenge-updater version
     Value: !Ref Route53DNSChallengeUpdaterLambdaVersion
     Export:
       Name: !Sub "${AWS::StackName}-Route53DNSChallengeUpdaterLambdaVersion"
+
+  UpdateChallengeCapability:
+    Description: This integration's UpdateChallenge capability
+    Value: !Ref UpdateChallengeCapability
 
   Version:
     Description: Unique version for this deployment

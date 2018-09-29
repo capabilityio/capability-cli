@@ -25,6 +25,24 @@ exports.builder = function(yargs)
     return yargs
         .commandDir("aws")
         .demandCommand()
+        .option("aws-assume-role-account",
+            {
+                group,
+                describe: "AWS Account Id where role to assume exists."
+                implies: "aws-assume-role-name",
+                requiresArg: true,
+                type: "string"
+            }
+        )
+        .option("aws-assume-role-name",
+            {
+                group,
+                describe: "AWS Role name to assume."
+                implies: "aws-assume-role-account",
+                requiresArg: true,
+                type: "string"
+            }
+        )
         .option("aws-profile",
             {
                 group,
@@ -44,3 +62,7 @@ exports.builder = function(yargs)
 };
 
 exports.handler = function(args) {};
+
+exports.CERTIFICATE_RECIPIENT_COMPONENT = "certificate-recipient:public-lambda-image";
+exports.CHALLENGE_UPDATER_COMPONENT = "challenge-updater:public-lambda-image";
+exports.PUBLIC_LAMBDAS_S3_BUCKET = "certificate-manager-service-public-lambdas";
