@@ -1,0 +1,254 @@
+#
+# Copyright 2018 Capability LLC. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+AWSTemplateFormatVersion: 2010-09-09
+
+Resources:
+
+  CertificateRecipientLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        S3Bucket: !Ref CertificateRecipientLambdaS3Bucket
+        S3Key: !Sub "certificate-recipient:public-lambda-image/certificate-recipient@${CertificateRecipientLambdaVersion}"
+      Environment:
+        Variables:
+          USERDATA: !Sub "{\"aws\":{\"s3\":{\"bucket\":\"${CertificatesS3Bucket}\"}}}"
+      FunctionName: !Sub "certificate-manager-certificate-recipient-${Version}"
+      Handler: !Ref CertificateRecipientLambdaHandler
+      MemorySize: !Ref CertificateRecipientLambdaMemorySize
+      Role: !GetAtt CertificateRecipientLambdaRole.Arn
+      Runtime: !Ref CertificateRecipientLambdaRuntime
+      Tags:
+        - Key: "provider"
+          Value: "capability.io"
+        - Key: "service"
+          Value: "certificate-manager"
+        - Key: "service:component"
+          Value: "certificate-recipient"
+        - Key: "service:component:version"
+          Value: !Ref CertificateRecipientLambdaVersion
+        - Key: "service:deployment:version"
+          Value: !Ref Version
+      Timeout: !Ref CertificateRecipientLambdaTimeout
+
+  CertificateRecipientLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: "lambda.amazonaws.com"
+            Action: "sts:AssumeRole"
+      Policies:
+        - PolicyName: !Sub "certificate-recipient-lambda-policy-${Version}"
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "s3:PutObject"
+                Resource:
+                  - !Sub
+                    - "${CertificatesS3BucketArn}/certificate/*"
+                    - CertificatesS3BucketArn: !GetAtt CertificatesS3Bucket.Arn
+                  - !Sub
+                    - "${CertificatesS3BucketArn}/key/*"
+                    - CertificatesS3BucketArn: !GetAtt CertificatesS3Bucket.Arn
+
+  CertificatesS3Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "${CertificatesS3BucketName}-${Version}"
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+
+  CertificatesS3BucketInitialPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref CertificatesS3Bucket
+      PolicyDocument:
+        Statement:
+          - Effect: Deny
+            Principal: "*"
+            Action: "s3:*"
+            Resource:
+              - !GetAtt CertificatesS3Bucket.Arn
+              - !Sub
+                - "${CertificatesS3BucketArn}/*"
+                - CertificatesS3BucketArn: !GetAtt CertificatesS3Bucket.Arn
+            Condition:
+              StringNotLike:
+                "aws:userId":
+                  - !Sub
+                    - "${CertificateRecipientLambdaRoleId}:*"
+                    - CertificateRecipientLambdaRoleId: !GetAtt CertificateRecipientLambdaRole.RoleId
+
+
+  Route53DNSChallengeUpdaterLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        S3Bucket: !Ref Route53DNSChallengeUpdaterLambdaS3Bucket
+        S3Key: !Sub "challenge-updater:public-lambda-image/route53-dns-challenge-updater@${Route53DNSChallengeUpdaterLambdaVersion}"
+      FunctionName: !Sub "certificate-manager-route53-dns-challenge-updater-${Version}"
+      Handler: !Ref Route53DNSChallengeUpdaterLambdaHandler
+      MemorySize: !Ref Route53DNSChallengeUpdaterLambdaMemorySize
+      Role: !GetAtt Route53DNSChallengeUpdaterLambdaRole.Arn
+      Runtime: !Ref Route53DNSChallengeUpdaterLambdaRuntime
+      Tags:
+        - Key: "provider"
+          Value: "capability.io"
+        - Key: "service"
+          Value: "certificate-manager"
+        - Key: "service:component"
+          Value: "route53-dns-challenge-updater"
+        - Key: "service:component:version"
+          Value: !Ref Route53DNSChallengeUpdaterLambdaVersion
+        - Key: "service:deployment:version"
+          Value: !Ref Version
+      Timeout: Route53DNSChallengeUpdaterLambdaTimeout
+
+  Route53DNSChallengeUpdaterLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: "lambda.amazonaws.com"
+            Action: "sts:AssumeRole"
+      Policies:
+        - PolicyName: !Sub "route53-dns-challenge-updater-lambda-policy-${Version}"
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "route53:ListHostedZones"
+                  - "route53:ChangeResourceRecordSets"
+                  - "route53:GetChange"
+                Resource:
+                  - "*"
+
+Parameters:
+
+  CertificateRecipientLambdaHandler:
+    Type: String
+    Default: "index.handle"
+    Description: certificate-recipient function handler
+
+  CertificateRecipientLambdaMemorySize:
+    Type: Number
+    Default: 128
+    Description: certificate-recipient memory size
+
+  CertificateRecipientLambdaRuntime:
+    Type: String
+    Default: "nodejs8.10"
+    Description: certificate-recipient runtime
+
+  CertificateRecipientLambdaS3Bucket:
+    Type: String
+    Default: certificate-manager-service-public-lambdas
+    Description: S3 bucket containing certificate-recipient releases
+
+  CertificateRecipientLambdaTimeout:
+    Type: Number
+    Default: 300
+    Description: certificate-recipient timeout in seconds
+
+  CertificateRecipientLambdaVersion:
+    Type: String
+    Description: certificate-recipient version to use
+
+  CertificatesS3BucketName:
+    Type: String
+    Description: Certificate S3 Bucket name to use
+
+  Route53DNSChallengeUpdaterLambdaHandler:
+    Type: String
+    Default: "index.handle"
+    Description: route53-dns-challenge-updater function handler
+
+  Route53DNSChallengeUpdaterLambdaMemorySize:
+    Type: Number
+    Default: 128
+    Description: route53-dns-challenge-updater memory size
+
+  Route53DNSChallengeUpdaterLambdaRuntime:
+    Type: String
+    Default: "nodejs8.10"
+    Description: route53-dns-challenge-updater runtime
+
+  Route53DNSChallengeUpdaterLambdaS3Bucket:
+    Type: String
+    Default: certificate-manager-service-public-lambdas
+    Description: S3 bucket containing route53-dns-challenge-updater releases
+
+  Route53DNSChallengeUpdaterLambdaTimeout:
+    Type: Number
+    Default: 300
+    Description: route53-dns-challenge-updater timeout in seconds
+
+  Route53DNSChallengeUpdaterLambdaVersion:
+    Type: String
+    Description: route53-dns-challenge-updater version to use
+
+  Version:
+    Type: String
+    Description: Version string to uniquely identify this deployment
+
+Outputs:
+
+  CertificateRecipientLambda:
+    Description: certificate-recipient name
+    Value: !Ref CertificateRecipientLambda
+    Export:
+      Name: !Sub "${AWS::StackName}-CertificateRecipientLambda"
+
+  CertificateRecipientLambdaVersion:
+    Description: certificate-recipient version
+    Value: !Ref CertificateRecipientLambdaVersion
+    Export:
+      Name: !Sub "${AWS::StackName}-CertificateRecipientLambdaVersion"
+
+  CertificatesS3BucketArn:
+    Value: !GetAtt CertificatesS3Bucket.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-CertificatesS3BucketArn"
+
+  Route53DNSChallengeUpdaterLambda:
+    Description: route53-dns-challenge-updater name
+    Value: !Ref Route53DNSChallengeUpdaterLambda
+    Export:
+      Name: !Sub "${AWS::StackName}-Route53DNSChallengeUpdaterLambda"
+
+  Route53DNSChallengeUpdaterLambdaVersion:
+    Description: route53-dns-challenge-updater version
+    Value: !Ref Route53DNSChallengeUpdaterLambdaVersion
+    Export:
+      Name: !Sub "${AWS::StackName}-Route53DNSChallengeUpdaterLambdaVersion"
+
+  Version:
+    Description: Unique version for this deployment
+    Value: !Ref Version
+    Export:
+      Name: !Sub "${AWS::StackName}-Version"
