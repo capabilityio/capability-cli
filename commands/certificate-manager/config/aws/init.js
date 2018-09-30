@@ -222,7 +222,6 @@ exports.handler = function(args)
     );
     workflow.on("wait on stack creation", dataBag =>
         {
-            console.error(`Waiting on ${dataBag.stackName} AWS CloudFormation stack`);
             process.stderr.write("...");
             let interval = setInterval(() => process.stderr.write("."), 5000);
             const params =
@@ -240,6 +239,10 @@ exports.handler = function(args)
                     }
                     console.error(`Creating ${dataBag.stackName} AWS CloudFormation stack SUCCEEDED`);
                     dataBag.stack = data.Stacks[0];
+                    dataBag.awsAccessKeyId = dataBag.stack.Outputs.filter(output => output.OutputKey == "CertificateManagerServiceUserAccessKeyId")[0].OutputValue;
+                    dataBag.certificateRecipientLambdaName = dataBag.stack.Outputs.filter(output => output.OutputKey == "CertificateRecipientLambda")[0].OutputValue;
+                    dataBag.challengeUpdaterLambdaName = dataBag.stack.Outputs.filter(output => output.OutputKey == "Route53DNSChallengeUpdaterLambda")[0].OutputValue;
+                    dataBag.secretAccessKey = dataBag.stack.Outputs.filter(output => output.OutputKey == "CertificateManagerServiceUserSecretAccessKey")[0].OutputValue;
                     return workflow.emit("create membrane", dataBag);
                 }
             );
@@ -250,7 +253,7 @@ exports.handler = function(args)
             const membraneName = `certificate-manager-integration-${args.version}`;
             console.error(`Creating ${membraneName} membrane`);
             const capability = membraneCommand.capability(args, "create");
-            const service = new CapabilitySDK.Membrane(
+            dataBag.membraneService = new CapabilitySDK.Membrane(
                 {
                     tls:
                     {
@@ -258,7 +261,7 @@ exports.handler = function(args)
                     }
                 }
             );
-            service.create(capability,
+            dataBag.membraneService.create(capability,
                 {
                     id: membraneName
                 },
@@ -270,24 +273,154 @@ exports.handler = function(args)
                     }
                     console.error(`Creating ${membraneName} membrane SUCCEEDED`);
                     dataBag.membrane = response;
-                    return workflow.emit("export certificate-recipient capability", dataBag);
+                    return workflow.emit("export ReceiveCertificate capability", dataBag);
                 }
             );
         }
     );
-    workflow.on("export certificate-recipient capability", dataBag =>
+    workflow.on("export ReceiveCertificate capability", dataBag =>
         {
-            // TODO
+            console.error(`Exporting ReceiveCertificate capability`);
+            dataBag.commonCapabilityConfig =
+            {
+                method: "POST",
+                hmac:
+                {
+                    "aws4-hmac-sha256":
+                    {
+                        awsAccessKeyId: dataBag.awsAccessKeyId,
+                        region: args["aws-region"],
+                        service: "lambda",
+                        secretAccessKey: dataBag.secretAccessKey
+                    }
+                },
+                allowQuery: false,
+                headers:
+                {
+                    "X-Amz-Invocation-Type": "RequestResponse",
+                    "X-Amz-Log-Type": "None"
+                }
+            };
+            dataBag.membraneService.export(
+                dataBag.membrane.capabilities.export,
+                Object.assign({}, dataBag.commonCapabilityConfig,
+                    {
+                        uri: `https://lambda.${args["aws-region"]}.amazonaws.com/2015-03-31/functions/${dataBag.certificateRecipientLambdaName}/invocations`
+                    }
+                ),
+                (error, response) =>
+                {
+                    if (error)
+                    {
+                        return membraneCommand.error(error);
+                    }
+                    console.error(`Exporting ReceiveCertificate capability SUCCEEDED`);
+                    dataBag.receiveCertificateCapability = response.capability;
+                    return workflow.emit("export UpdateChallenge capability", dataBag);
+                }
+            );
         }
     );
-    workflow.on("export challenge-updater capability", dataBag =>
+    workflow.on("export UpdateChallenge capability", dataBag =>
         {
-            // TODO
+            console.error(`Exporting UpdateChallenge capability`);
+            dataBag.membraneService.export(
+                dataBag.membrane.capabilities.export,
+                Object.assign({}, dataBag.commonCapabilityConfig,
+                    {
+                        uri: `https://lambda.${args["aws-region"]}.amazonaws.com/2015-03-31/functions/${dataBag.challengeUpdaterLambdaName}/invocations`
+                    }
+                ),
+                (error, response) =>
+                {
+                    if (error)
+                    {
+                        return membraneCommand.error(error);
+                    }
+                    console.error(`Exporting UpdateChallenge capability SUCCEEDED`);
+                    dataBag.updateChallengeCapability = response.capability;
+                    return workflow.emit("set active capabilities", dataBag);
+                }
+            );
         }
     );
     workflow.on("set active capabilities", dataBag =>
         {
-            // TODO
+            const params =
+            {
+                StackName: dataBag.stack.StackName,
+                TemplateBody: dataBag.template,
+                Capabilities: dataBag.stack.Capabilities,
+                Parameters: dataBag.stack.Parameters
+                    .map(param =>
+                        {
+                            delete param.ParameterValue;
+                            param.UsePreviousValue = true;
+                            return param;
+                        }
+                    )
+                    .map(param =>
+                        {
+                            switch (param.ParameterKey)
+                            {
+                                case "ReceiveCertificateCapability":
+                                    param.ParameterValue = dataBag.receiveCertificateCapability;
+                                    break;
+                                case "UpdateChallengeCapability":
+                                    param.ParameterValue = dataBag.updateChallengeCapability;
+                                    break;
+                            }
+                            return param;
+                        }
+                    ),
+                Tags: dataBag.stack.Tags
+            };
+            dataBag.aws.cloudformation.updateStack(params, (error, data) =>
+                {
+                    if (error)
+                    {
+                        console.error(JSON.stringify(error, null, 2));
+                        return process.exit(1);
+                    }
+                    return workflow.emit("wait on stack update", dataBag);
+                }
+            );
+        }
+    );
+    workflow.on("wait on stack update", dataBag =>
+        {
+            console.error(`Updating ${dataBag.stackName} AWS CloudFormation stack`);
+            process.stderr.write("...");
+            let interval = setInterval(() => process.stderr.write("."), 5000);
+            const params =
+            {
+                StackName: dataBag.stackName
+            };
+            dataBag.aws.cloudformation.waitFor("stackUpdateComplete", params, (error, data) =>
+                {
+                    clearInterval(interval);
+                    console.error();
+                    if (error)
+                    {
+                        console.error(JSON.stringify(error, null, 2));
+                        return workflow.emit("show stack events", dataBag);
+                    }
+                    console.error(`Updating ${dataBag.stackName} AWS CloudFormation stack SUCCEEDED`);
+                    console.log(
+                        JSON.stringify(
+                            {
+                                capabilities:
+                                {
+                                    receiveCertificate: dataBag.receiveCertificateCapability,
+                                    updateChallenge: dataBag.updateChallengeCapability
+                                }
+                            },
+                            null,
+                            2
+                        )
+                    );
+                }
+            );
         }
     );
     workflow.on("show stack events", dataBag =>
