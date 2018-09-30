@@ -150,7 +150,7 @@ Resources:
           Value: !Ref Route53DNSChallengeUpdaterLambdaVersion
         - Key: "service:deployment:version"
           Value: !Ref Version
-      Timeout: Route53DNSChallengeUpdaterLambdaTimeout
+      Timeout: !Ref Route53DNSChallengeUpdaterLambdaTimeout
 
   Route53DNSChallengeUpdaterLambdaRole:
     Type: AWS::IAM::Role

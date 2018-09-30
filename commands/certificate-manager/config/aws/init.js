@@ -20,7 +20,9 @@ const awsCommand = require("../aws.js");
 const CapabilitySDK = require("capability-sdk");
 const crypto = require("crypto");
 const events = require("events");
+const fs = require("fs");
 const membraneCommand = require("../../../membrane.js");
+const path = require("path");
 
 exports.command = "init";
 
@@ -39,7 +41,7 @@ exports.builder = function(yargs)
                 type: "string"
             }
         )
-        .option("version",
+        .option("config-version",
             {
                 group,
                 describe: "Version string to uniquely identify integration configuration.",
@@ -162,7 +164,7 @@ exports.handler = function(args)
     );
     workflow.on("create stack", dataBag =>
         {
-            dataBag.stackName = `certificate-manager-integration-${args.version}`;
+            dataBag.stackName = `certificate-manager-integration-${args["config-version"]}`;
             console.error(`Creating ${dataBag.stackName} AWS CloudFormation stack`);
             const params =
             {
@@ -189,7 +191,7 @@ exports.handler = function(args)
                     },
                     {
                         ParameterKey: "Version",
-                        ParameterValue: args.version
+                        ParameterValue: args["config-version"]
                     }
                 ],
                 Tags:
@@ -208,7 +210,7 @@ exports.handler = function(args)
                     },
                     {
                         Key: "service:component:version",
-                        Value: args.version
+                        Value: args["config-version"]
                     }
                 ]
             };
@@ -254,7 +256,7 @@ exports.handler = function(args)
     );
     workflow.on("create membrane", dataBag =>
         {
-            const membraneName = `certificate-manager-integration-${args.version}`;
+            const membraneName = `certificate-manager-integration-${args["config-version"]}`;
             console.error(`Creating ${membraneName} membrane`);
             const capability = membraneCommand.capability(args, "create");
             dataBag.membraneService = new CapabilitySDK.Membrane(
