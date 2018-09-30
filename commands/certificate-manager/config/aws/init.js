@@ -106,6 +106,7 @@ exports.handler = function(args)
     );
     workflow.on("discover latest certificate-recipient version", dataBag =>
         {
+            console.error(`Retrieving latest certificate-recipient version`);
             const params =
             {
                 Bucket: awsCommand.PUBLIC_LAMBDAS_S3_BUCKET,
@@ -119,6 +120,7 @@ exports.handler = function(args)
                         return process.exit(1);
                     }
                     dataBag.latest.certificateRecipient = data.Body.toString("utf8");
+                    console.error(`Retrieved latest certificate-recipient version: ${dataBag.latest.certificateRecipient}`);
                     return workflow.emit("discover latest challenge-updater version", dataBag);
                 }
             );
@@ -126,6 +128,7 @@ exports.handler = function(args)
     );
     workflow.on("discover latest challenge-updater version", dataBag =>
         {
+            console.error(`Retrieving latest challenge-updater version`);
             const params =
             {
                 Bucket: awsCommand.PUBLIC_LAMBDAS_S3_BUCKET,
@@ -139,6 +142,7 @@ exports.handler = function(args)
                         return process.exit(1);
                     }
                     dataBag.latest.challengeUpdater = data.Body.toString("utf8");
+                    console.error(`Retrieved latest challenge-updater version: ${dataBag.latest.challengeUpdater}`);
                     return workflow.emit("read cloudformation template", dataBag);
                 }
             );

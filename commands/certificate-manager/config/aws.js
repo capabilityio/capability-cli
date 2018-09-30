@@ -28,7 +28,7 @@ exports.builder = function(yargs)
         .option("aws-assume-role-account",
             {
                 group,
-                describe: "AWS Account Id where role to assume exists."
+                describe: "AWS Account Id where role to assume exists.",
                 implies: "aws-assume-role-name",
                 requiresArg: true,
                 type: "string"
@@ -37,7 +37,7 @@ exports.builder = function(yargs)
         .option("aws-assume-role-name",
             {
                 group,
-                describe: "AWS Role name to assume."
+                describe: "AWS Role name to assume.",
                 implies: "aws-assume-role-account",
                 requiresArg: true,
                 type: "string"
