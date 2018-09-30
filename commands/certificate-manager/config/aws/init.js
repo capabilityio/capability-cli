@@ -67,7 +67,8 @@ exports.handler = function(args)
             {
                 certificateRecipient: undefined,
                 challengeUpdater: undefined
-            }
+            },
+            callerType: "user"
         }
     ));
     workflow.on("start", dataBag => workflow.emit("assume role if needed", dataBag));
@@ -89,6 +90,7 @@ exports.handler = function(args)
                 RoleSessionName: crypto.randomBytes(32).toString("hex")
             };
             AWS.config.credentials = new AWS.TemporaryCredentials(params);
+            dataBag.callerType = "role"
             return workflow.emit("setup aws-sdk", dataBag);
         }
     );
@@ -101,9 +103,25 @@ exports.handler = function(args)
             dataBag.aws =
             {
                 cloudformation: new AWS.CloudFormation(conf),
-                s3: new AWS.S3(conf)
+                s3: new AWS.S3(conf),
+                sts: new AWS.STS(conf)
             };
-            return workflow.emit("discover latest certificate-recipient version", dataBag);
+            return workflow.emit("get caller identity", dataBag);
+        }
+    );
+    workflow.on("get caller identity", dataBag =>
+        {
+            dataBag.aws.sts.getCallerIdentity({}, (error, data) =>
+                {
+                    if (error)
+                    {
+                        console.error(JSON.stringify(error, null, 2));
+                        return process.exit(1);
+                    }
+                    dataBag.callerIdentity = data.UserId.split(":")[0];
+                    return workflow.emit("discover latest certificate-recipient version", dataBag);
+                }
+            );
         }
     );
     workflow.on("discover latest certificate-recipient version", dataBag =>
@@ -177,6 +195,10 @@ exports.handler = function(args)
                 ],
                 Parameters:
                 [
+                    {
+                        ParameterKey: "CallerIdentity",
+                        ParameterValue: dataBag.callerType == "user" ? dataBag.callerIdentity : `${dataBag.callerIdentity}:*`
+                    },
                     {
                         ParameterKey: "CertificateRecipientLambdaVersion",
                         ParameterValue: dataBag.latest.certificateRecipient

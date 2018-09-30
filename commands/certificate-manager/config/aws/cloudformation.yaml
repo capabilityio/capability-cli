@@ -124,6 +124,8 @@ Resources:
             Condition:
               StringNotLike:
                 "aws:userId":
+                  - !Sub "${AWS::AccountId}"
+                  - !Ref CallerIdentity
                   - !Sub
                     - "${CertificateRecipientLambdaRoleId}:*"
                     - CertificateRecipientLambdaRoleId: !GetAtt CertificateRecipientLambdaRole.RoleId
@@ -184,6 +186,10 @@ Resources:
                   - !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/certificate-manager-route53-dns-challenge-updater-${Version}:*"
 
 Parameters:
+
+  CallerIdentity:
+    Type: String
+    Description: Identity of the caller to grant S3 bucket access to
 
   CertificateRecipientLambdaHandler:
     Type: String
