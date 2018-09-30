@@ -393,9 +393,11 @@ exports.handler = function(args)
                             {
                                 case "ReceiveCertificateCapability":
                                     param.ParameterValue = dataBag.receiveCertificateCapability;
+                                    delete param.UsePreviousValue;
                                     break;
                                 case "UpdateChallengeCapability":
                                     param.ParameterValue = dataBag.updateChallengeCapability;
+                                    delete param.UsePreviousValue;
                                     break;
                             }
                             return param;
