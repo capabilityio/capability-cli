@@ -322,17 +322,17 @@ exports.handler = function(args)
                         secretAccessKey: dataBag.secretAccessKey
                     }
                 },
-                allowQuery: false,
-                headers:
-                {
-                    "X-Amz-Invocation-Type": "RequestResponse",
-                    "X-Amz-Log-Type": "None"
-                }
+                allowQuery: false
             };
             dataBag.membraneService.export(
                 dataBag.membrane.capabilities.export,
                 Object.assign({}, dataBag.commonCapabilityConfig,
                     {
+                        headers:
+                        {
+                            "X-Amz-Invocation-Type": "RequestResponse",
+                            "X-Amz-Log-Type": "None"
+                        },
                         uri: `https://lambda.${args["aws-region"]}.amazonaws.com/2015-03-31/functions/${dataBag.certificateRecipientLambdaName}/invocations`
                     }
                 ),
@@ -356,6 +356,11 @@ exports.handler = function(args)
                 dataBag.membrane.capabilities.export,
                 Object.assign({}, dataBag.commonCapabilityConfig,
                     {
+                        headers:
+                        {
+                            "X-Amz-Invocation-Type": "Event",
+                            "X-Amz-Log-Type": "None"
+                        },
                         uri: `https://lambda.${args["aws-region"]}.amazonaws.com/2015-03-31/functions/${dataBag.challengeUpdaterLambdaName}/invocations`
                     }
                 ),
