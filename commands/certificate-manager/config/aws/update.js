@@ -57,7 +57,11 @@ exports.handler = function(args)
                 challengeUpdater: undefined
             },
             callerType: "user",
-            stackName: `certificate-manager-integration-${args["config-version"]}`
+            stackName: `certificate-manager-integration-${args["config-version"]}`,
+            userdata:
+            {
+                route53DNSChallengeUpdater: undefined
+            }
         }
     ));
     workflow.on("start", dataBag => workflow.emit("assume role if needed", dataBag));
@@ -162,9 +166,26 @@ exports.handler = function(args)
                         return process.exit(1);
                     }
                     dataBag.stack = data.Stacks[0];
-                    return workflow.emit("read cloudformation template", dataBag);
+                    return workflow.emit("generate route53DNSChallengeUpdater userdata", dataBag);
                 }
             );
+        }
+    );
+    workflow.on("generate route53DNSChallengeUpdater userdata", dataBag =>
+        {
+            const userdata =
+            {
+                stderrTelemetry: true
+            };
+            if (args["trustedCA-file-path"])
+            {
+                userdata.tls =
+                {
+                    trustedCA: args["trustedCA-file-path"]
+                }
+            }
+            dataBag.userdata.route53DNSChallengeUpdater = JSON.stringify(userdata);
+            return workflow.emit("read cloudformation template", dataBag);
         }
     );
     workflow.on("read cloudformation template", dataBag =>
@@ -200,7 +221,11 @@ exports.handler = function(args)
                             {
                                 case "CertificateRecipientLambdaVersion":
                                     delete param.UsePreviousValue;
-                                    param.ParameterValue = dataBag.latest.certificateRecipient
+                                    param.ParameterValue = dataBag.latest.certificateRecipient;
+                                    break;
+                                case "Route53DNSChallengeUpdaterLambdaUserData":
+                                    delete param.UsePreviousValue;
+                                    param.ParameterValue = dataBag.userdata.route53DNSChallengeUpdater;
                                     break;
                                 case "Route53DNSChallengeUpdaterLambdaVersion":
                                     delete param.UsePreviousValue;

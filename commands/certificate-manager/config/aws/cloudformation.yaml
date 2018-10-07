@@ -136,6 +136,9 @@ Resources:
       Code:
         S3Bucket: !Ref Route53DNSChallengeUpdaterLambdaS3Bucket
         S3Key: !Sub "challenge-updater:public-lambda-image/route53-dns-challenge-updater@${Route53DNSChallengeUpdaterLambdaVersion}"
+      Environment:
+        Variables:
+          USERDATA: !Ref Route53DNSChallengeUpdaterLambdaUserData
       FunctionName: !Sub "certificate-manager-route53-dns-challenge-updater-${Version}"
       Handler: !Ref Route53DNSChallengeUpdaterLambdaHandler
       MemorySize: !Ref Route53DNSChallengeUpdaterLambdaMemorySize
@@ -254,6 +257,10 @@ Parameters:
     Type: Number
     Default: 300
     Description: route53-dns-challenge-updater timeout in seconds
+
+  Route53DNSChallengeUpdaterLambdaUserData:
+    Type: String
+    Description: route53-dns-challenge-updater configuration in userdata
 
   Route53DNSChallengeUpdaterLambdaVersion:
     Type: String

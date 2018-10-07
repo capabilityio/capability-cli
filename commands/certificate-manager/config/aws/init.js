@@ -68,7 +68,11 @@ exports.handler = function(args)
                 certificateRecipient: undefined,
                 challengeUpdater: undefined
             },
-            callerType: "user"
+            callerType: "user",
+            userdata:
+            {
+                route53DNSChallengeUpdater: undefined
+            }
         }
     ));
     workflow.on("start", dataBag => workflow.emit("assume role if needed", dataBag));
@@ -163,9 +167,26 @@ exports.handler = function(args)
                     }
                     dataBag.latest.challengeUpdater = data.Body.toString("utf8");
                     console.error(`Retrieved latest challenge-updater version: ${dataBag.latest.challengeUpdater}`);
-                    return workflow.emit("read cloudformation template", dataBag);
+                    return workflow.emit("generate route53DNSChallengeUpdater userdata", dataBag);
                 }
             );
+        }
+    );
+    workflow.on("generate route53DNSChallengeUpdater userdata", dataBag =>
+        {
+            const userdata =
+            {
+                stderrTelemetry: true
+            };
+            if (args["trustedCA-file-path"])
+            {
+                userdata.tls =
+                {
+                    trustedCA: args["trustedCA-file-path"]
+                }
+            }
+            dataBag.userdata.route53DNSChallengeUpdater = JSON.stringify(userdata);
+            return workflow.emit("read cloudformation template", dataBag);
         }
     );
     workflow.on("read cloudformation template", dataBag =>
@@ -206,6 +227,10 @@ exports.handler = function(args)
                     {
                         ParameterKey: "CertificatesS3BucketName",
                         ParameterValue: args["certificates-s3-bucket-name"]
+                    },
+                    {
+                        ParameterKey: "Route53DNSChallengeUpdaterLambdaUserData",
+                        ParameterValue: dataBag.userdata.route53DNSChallengeUpdater
                     },
                     {
                         ParameterKey: "Route53DNSChallengeUpdaterLambdaVersion",
