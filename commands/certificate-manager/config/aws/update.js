@@ -44,7 +44,7 @@ exports.handler = function(args)
 {
     const awsCredentials = new AWS.SharedIniFileCredentials(
         {
-            profile: args["amzn-profile"]
+            profile: args["aws-profile"]
         }
     );
     AWS.config.credentials = awsCredentials;
