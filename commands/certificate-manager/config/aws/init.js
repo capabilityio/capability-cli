@@ -32,10 +32,10 @@ exports.builder = function(yargs)
 {
     const group = "Initialize:";
     return yargs
-        .option("certificates-s3-bucket-name",
+        .option("certificates-s3-bucket-name-prefix",
             {
                 group,
-                describe: "Name for the S3 bucket that will contain your certificates.",
+                describe: "Prefix for the name of the S3 bucket that will contain your certificates. Full name will be this prefix with version appended at the end.",
                 demandOption: true,
                 requiresArg: true,
                 type: "string"
@@ -226,7 +226,7 @@ exports.handler = function(args)
                     },
                     {
                         ParameterKey: "CertificatesS3BucketName",
-                        ParameterValue: args["certificates-s3-bucket-name"]
+                        ParameterValue: args["certificates-s3-bucket-name-prefix"]
                     },
                     {
                         ParameterKey: "Route53DNSChallengeUpdaterLambdaUserData",

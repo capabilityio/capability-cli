@@ -101,7 +101,7 @@ Resources:
   CertificatesS3Bucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: !Sub "${CertificatesS3BucketName}-${Version}"
+      BucketName: !Sub "${CertificatesS3BucketNamePrefix}-${Version}"
       BucketEncryption:
         ServerSideEncryptionConfiguration:
           - ServerSideEncryptionByDefault:
@@ -223,9 +223,9 @@ Parameters:
     Type: String
     Description: certificate-recipient version to use
 
-  CertificatesS3BucketName:
+  CertificatesS3BucketNamePrefix:
     Type: String
-    Description: Certificate S3 Bucket name to use
+    Description: Certificate S3 Bucket name prefix to use
 
   ReceiveCertificateCapability:
     Type: String
