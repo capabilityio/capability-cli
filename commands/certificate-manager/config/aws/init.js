@@ -18,6 +18,7 @@
 const AWS = require("aws-sdk");
 const awsCommand = require("../aws.js");
 const CapabilitySDK = require("capability-sdk");
+const CapabilityURI = require("capability-uri");
 const crypto = require("crypto");
 const events = require("events");
 const fs = require("fs");
@@ -32,10 +33,27 @@ exports.builder = function(yargs)
 {
     const group = "Initialize:";
     return yargs
+        .option("capability",
+            {
+                group,
+                describe: "Capability to create membrane for this integration configuration. If not provided, membrane create capability specified in your current profile will be used.",
+                coerce: opt =>
+                {
+                    const capabilityURI = CapabilityURI.parse(opt);
+                    if (!capabilityURI)
+                    {
+                        throw new Error("Failed parsing capability");
+                    }
+                    return opt;
+                },
+                requiresArg: true,
+                type: "string"
+            }
+        )
         .option("certificates-s3-bucket-name-prefix",
             {
                 group,
-                describe: "Prefix for the name of the S3 bucket that will contain your certificates. Full name will be this prefix with version appended at the end.",
+                describe: "Prefix for the name of the S3 bucket that will contain your certificates. Full name will be this prefix with config-version appended at the end.",
                 demandOption: true,
                 requiresArg: true,
                 type: "string"
@@ -491,14 +509,13 @@ exports.handler = function(args)
             };
             dataBag.aws.cloudformation.describeStackEvents(params, (error, data) =>
                 {
+                    console.error();
                     if (error)
                     {
-                        console.error();
                         console.error(JSON.stringify(error, null, 2));
                         console.error(`Unable to retrieve error details`);
                         return;
                     }
-                    console.error();
                     console.error(
                         data.StackEvents.map(event => `${event.Timestamp} ${event.ResourceStatus} ${event.ResourceType} ${event.ResourceStatusReason ? `- ${event.ResourceStatusReason}` : ""}`).join("\n")
                     );
