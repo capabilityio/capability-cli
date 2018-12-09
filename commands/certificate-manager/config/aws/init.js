@@ -243,7 +243,7 @@ exports.handler = function(args)
                         ParameterValue: dataBag.latest.certificateRecipient
                     },
                     {
-                        ParameterKey: "CertificatesS3BucketName",
+                        ParameterKey: "CertificatesS3BucketNamePrefix",
                         ParameterValue: args["certificates-s3-bucket-name-prefix"]
                     },
                     {
