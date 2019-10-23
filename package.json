@@ -13,7 +13,7 @@
     "lockfile": "1.0.4",
     "prompt": "1.0.0",
     "semver": "6.3.0",
-    "yargs": "14.0.0"
+    "yargs": "14.2.0"
   },
   "contributors": [
     "Tristan Slominski <tristan.slominski@gmail.com>"
