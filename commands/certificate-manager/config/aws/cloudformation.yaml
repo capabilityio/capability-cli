@@ -1,5 +1,5 @@
 #
-# Copyright 2018 Capability LLC. All Rights Reserved.
+# Copyright 2018-2019 Capability LLC. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -206,7 +206,7 @@ Parameters:
 
   CertificateRecipientLambdaRuntime:
     Type: String
-    Default: "nodejs8.10"
+    Default: "nodejs10.x"
     Description: certificate-recipient runtime
 
   CertificateRecipientLambdaS3Bucket:
@@ -245,7 +245,7 @@ Parameters:
 
   Route53DNSChallengeUpdaterLambdaRuntime:
     Type: String
-    Default: "nodejs8.10"
+    Default: "nodejs10.x"
     Description: route53-dns-challenge-updater runtime
 
   Route53DNSChallengeUpdaterLambdaS3Bucket:
