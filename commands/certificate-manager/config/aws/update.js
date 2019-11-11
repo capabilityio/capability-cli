@@ -219,9 +219,17 @@ exports.handler = function(args)
                         {
                             switch (param.ParameterKey)
                             {
+                                case "CertificateRecipientLambdaRuntime":
+                                    delete param.UsePreviousValue;
+                                    param.ParameterValue = "nodejs10.x";
+                                    break;
                                 case "CertificateRecipientLambdaVersion":
                                     delete param.UsePreviousValue;
                                     param.ParameterValue = dataBag.latest.certificateRecipient;
+                                    break;
+                                case "Route53DNSChallengeUpdaterLambdaRuntime":
+                                    delete param.UsePreviousValue;
+                                    param.ParameterValue = "nodejs10.x";
                                     break;
                                 case "Route53DNSChallengeUpdaterLambdaUserData":
                                     delete param.UsePreviousValue;
