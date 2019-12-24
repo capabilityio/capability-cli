@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Capability LLC. All Rights Reserved.
+ * Copyright 2017-2019 Capability LLC. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,31 +16,21 @@
 "use strict";
 
 const CapabilitySDK = require("capability-sdk");
-const media = require("../media.js");
+const membrane = require("../membrane.js");
 
-exports.command = "getemailcustomid";
+exports.command = "delete-self";
 
-exports.desc = "Get email customId.";
+exports.desc = "Delete self.";
 
 exports.builder = function(yargs)
 {
-    const group = "Get email customId:";
-    return yargs
-        .option("derivedId",
-            {
-                group,
-                describe: "Unique identifier for the email address that is derived from the email address.",
-                demandOption: true,
-                requiresArg: true,
-                type: "string"
-            }
-        );
+    return yargs;
 };
 
 exports.handler = function(args)
 {
-    const capability = media.capability(args, "getEmailCustomId");
-    const service = new CapabilitySDK.Media(
+    const capability = membrane.capability(args, "deleteSelf");
+    const service = new CapabilitySDK.Membrane(
         {
             tls:
             {
@@ -48,13 +38,14 @@ exports.handler = function(args)
             }
         }
     );
-    service.getEmailCustomId(capability, args.derivedId, (error, resp) =>
+    service.deleteSelf(capability,
+        (error, response) =>
         {
             if (error)
             {
-                return media.error(error);
+                return membrane.error(error);
             }
-            console.log(JSON.stringify(resp, null, 2));
+            console.log(JSON.stringify(response, null, 2));
         }
     );
 };

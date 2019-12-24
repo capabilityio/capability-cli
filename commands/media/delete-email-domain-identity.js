@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2018 Capability LLC. All Rights Reserved.
+ * Copyright 2019 Capability LLC. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,21 +16,22 @@
 "use strict";
 
 const CapabilitySDK = require("capability-sdk");
-const membrane = require("../membrane.js");
+const media = require("../media.js");
 
-exports.command = "deleteself";
+exports.command = "delete-email-domain-identity";
 
-exports.desc = "Delete self.";
+exports.desc = "Delete EmailDomainIdentity.";
 
 exports.builder = function(yargs)
 {
+    const group = "Delete EmailDomainIdentity:";
     return yargs;
 };
 
 exports.handler = function(args)
 {
-    const capability = membrane.capability(args, "deleteSelf");
-    const service = new CapabilitySDK.Membrane(
+    const capability = media.capability(args, "deleteEmailDomainIdentity");
+    const service = new CapabilitySDK.Media(
         {
             tls:
             {
@@ -38,14 +39,13 @@ exports.handler = function(args)
             }
         }
     );
-    service.deleteSelf(capability,
-        (error, response) =>
+    service.deleteEmailDomainIdentity(capability, (error, resp) =>
         {
             if (error)
             {
-                return membrane.error(error);
+                return media.error(error);
             }
-            console.log(JSON.stringify(response, null, 2));
+            console.log(JSON.stringify(resp, null, 2));
         }
     );
 };

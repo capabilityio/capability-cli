@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Capability LLC. All Rights Reserved.
+ * Copyright 2018-2019 Capability LLC. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,15 +16,15 @@
 "use strict";
 
 const CapabilitySDK = require("capability-sdk");
-const media = require("../media.js");
+const certificateManager = require("../certificate-manager.js");
 
-exports.command = "queryemaildomainidentities";
+exports.command = "query-domains";
 
-exports.desc = "Query EmailDomainIdentities.";
+exports.desc = "Query domains.";
 
 exports.builder = function(yargs)
 {
-    const group = "Query EmailDomainIdentities:";
+    const group = "Query Domains:";
     return yargs
         .option("domain",
             {
@@ -62,8 +62,8 @@ exports.builder = function(yargs)
 
 exports.handler = function(args)
 {
-    const capability = media.capability(args, "queryEmailDomainIdentities");
-    const service = new CapabilitySDK.Media(
+    const capability = certificateManager.capability(args, "queryDomains");
+    const service = new CapabilitySDK.CertificateManager(
         {
             tls:
             {
@@ -71,25 +71,25 @@ exports.handler = function(args)
             }
         }
     );
-    const query =
+    const params =
     {
         domain: args.domain,
         lastDomain: args["last-domain"],
         limit: args.limit
     };
-    Object.keys(query).map(key =>
+    Object.keys(params).map(key =>
         {
-            if (query[key] === undefined)
+            if (params[key] === undefined)
             {
-                delete query[key];
+                delete params[key];
             }
         }
     );
-    service.queryEmailDomainIdentities(capability, query, (error, resp) =>
+    service.queryDomains(capability, params, (error, resp) =>
         {
             if (error)
             {
-                return media.error(error);
+                return certificateManager.error(error);
             }
             console.log(JSON.stringify(resp, null, 2));
         }

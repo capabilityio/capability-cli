@@ -18,46 +18,51 @@
 const CapabilitySDK = require("capability-sdk");
 const media = require("../media.js");
 
-exports.command = "createemail";
+exports.command = "query-email-domain-identities";
 
-exports.desc = "Create email.";
+exports.desc = "Query EmailDomainIdentities.";
 
 exports.builder = function(yargs)
 {
-    const group = "Create Email:";
+    const group = "Query EmailDomainIdentities:";
     return yargs
-        .option("customId",
+        .option("domain",
             {
                 group,
-                describe: "Unique identifier for the email address that is independent (not derived) from the email.",
-                demandOption: true,
+                describe: "Domain to query for.",
                 requiresArg: true,
                 type: "string"
             }
         )
-        .option("derivedId",
+        .option("last-domain",
             {
                 group,
-                describe: "Unique identifier for the email address that is derived from the email address.",
-                demandOption: true,
+                describe: "Last domain from previous query.",
                 requiresArg: true,
                 type: "string"
             }
         )
-        .option("email",
+        .option("limit",
             {
                 group,
-                describe: "Email address.",
-                demandOption: true,
+                describe: "Limit number of results.",
+                coerce: opt =>
+                {
+                    if (parseInt(opt) <= 0)
+                    {
+                        throw new Error("--limit must be greater than 0");
+                    }
+                    return parseInt(opt);
+                },
                 requiresArg: true,
-                type: "string"
+                type: "number"
             }
         );
 };
 
 exports.handler = function(args)
 {
-    const capability = media.capability(args, "createEmail");
+    const capability = media.capability(args, "queryEmailDomainIdentities");
     const service = new CapabilitySDK.Media(
         {
             tls:
@@ -66,13 +71,21 @@ exports.handler = function(args)
             }
         }
     );
-    service.createEmail(capability,
+    const query =
+    {
+        domain: args.domain,
+        lastDomain: args["last-domain"],
+        limit: args.limit
+    };
+    Object.keys(query).map(key =>
         {
-            customId: args.customId,
-            derivedId: args.derivedId,
-            email: args.email
-        },
-        (error, resp) =>
+            if (query[key] === undefined)
+            {
+                delete query[key];
+            }
+        }
+    );
+    service.queryEmailDomainIdentities(capability, query, (error, resp) =>
         {
             if (error)
             {

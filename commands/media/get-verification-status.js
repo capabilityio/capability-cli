@@ -18,28 +18,19 @@
 const CapabilitySDK = require("capability-sdk");
 const media = require("../media.js");
 
-exports.command = "createemaildomainidentity";
+exports.command = "get-verification-status";
 
-exports.desc = "Create EmailDomainIdentity.";
+exports.desc = "Get verification status.";
 
 exports.builder = function(yargs)
 {
-    const group = "Create EmailDomainIdentity:";
-    return yargs
-        .option("domain",
-            {
-                group,
-                describe: "Email domain to send emails from.",
-                demandOption: true,
-                requiresArg: true,
-                type: "string"
-            }
-        );
+    const group = "Get verification status:";
+    return yargs;
 };
 
 exports.handler = function(args)
 {
-    const capability = media.capability(args, "createEmailDomainIdentity");
+    const capability = media.capability(args, "getVerificationStatus");
     const service = new CapabilitySDK.Media(
         {
             tls:
@@ -48,11 +39,7 @@ exports.handler = function(args)
             }
         }
     );
-    service.createEmailDomainIdentity(capability,
-        {
-            domain: args.domain
-        },
-        (error, resp) =>
+    service.getVerificationStatus(capability, (error, resp) =>
         {
             if (error)
             {

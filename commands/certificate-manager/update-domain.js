@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 Capability LLC. All Rights Reserved.
+ * Copyright 2018-2019 Capability LLC. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,68 +19,14 @@ const CapabilitySDK = require("capability-sdk");
 const CapabilityURI = require("capability-uri");
 const certificateManager = require("../certificate-manager.js");
 
-exports.command = "createdomain";
+exports.command = "update-domain";
 
-exports.desc = "Create domain.";
+exports.desc = "Update domain.";
 
 exports.builder = function(yargs)
 {
-    const group = "Create Domain:";
+    const group = "Update Domain:"
     return yargs
-        .option("country",
-            {
-                group,
-                describe: "The two-letter ISO country code of the country where the organization is located.",
-                demandOption: true,
-                requiresArg: true,
-                type: "string"
-            }
-        )
-        .option("domain",
-            {
-                group,
-                describe: "Fully qualified domain name.",
-                demandOption: true,
-                requiresArg: true,
-                type: "string"
-            }
-        )
-        .option("locality",
-            {
-                group,
-                describe: "The location of the organization, usually a city.",
-                demandOption: true,
-                requiresArg: true,
-                type: "string"
-            }
-        )
-        .option("organization",
-            {
-                group,
-                describe: "Usually the legal incorporated name of a company and should include any suffixes such as Ltd., Inc., or Corp.",
-                demandOption: true,
-                requiresArg: true,
-                type: "string"
-            }
-        )
-        .option("organizational-unit",
-            {
-                group,
-                describe: "e.g. HR, Finance, IT.",
-                requiresArg: true,
-                type: "string"
-            }
-        )
-        .option("province",
-            {
-                group,
-                alias: "state",
-                describe: "The state or province where the organization is located.",
-                demandOption: true,
-                requiresArg: true,
-                type: "string"
-            }
-        )
         .option("receive-certificate-capability",
             {
                 group,
@@ -121,7 +67,7 @@ exports.builder = function(yargs)
 
 exports.handler = function(args)
 {
-    const capability = certificateManager.capability(args, "createDomain");
+    const capability = certificateManager.capability(args, "updateDomain");
     const service = new CapabilitySDK.CertificateManager(
         {
             tls:
@@ -130,21 +76,12 @@ exports.handler = function(args)
             }
         }
     );
-    service.createDomain(capability,
+    service.updateDomain(capability,
         {
-            domain: args.domain,
             capabilities:
             {
                 receiveCertificate: args["receive-certificate-capability"],
                 updateChallenge: args["update-challenge-capability"]
-            },
-            subject:
-            {
-                country: args.country,
-                stateProvince: args.province,
-                locality: args.locality,
-                organization: args.organization,
-                organizationalUnit: args["organizational-unit"]
             }
         },
         (error, resp) =>

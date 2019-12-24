@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Capability LLC. All Rights Reserved.
+ * Copyright 2018-2019 Capability LLC. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,22 +16,21 @@
 "use strict";
 
 const CapabilitySDK = require("capability-sdk");
-const media = require("../media.js");
+const certificateManager = require("../certificate-manager.js");
 
-exports.command = "deleteemaildomainidentity";
+exports.command = "deliver-certificate";
 
-exports.desc = "Delete EmailDomainIdentity.";
+exports.desc = "Deliver certificate.";
 
 exports.builder = function(yargs)
 {
-    const group = "Delete EmailDomainIdentity:";
     return yargs;
 };
 
 exports.handler = function(args)
 {
-    const capability = media.capability(args, "deleteEmailDomainIdentity");
-    const service = new CapabilitySDK.Media(
+    const capability = certificateManager.capability(args, "deliverCertificate");
+    const service = new CapabilitySDK.CertificateManager(
         {
             tls:
             {
@@ -39,11 +38,11 @@ exports.handler = function(args)
             }
         }
     );
-    service.deleteEmailDomainIdentity(capability, (error, resp) =>
+    service.deliverCertificate(capability, (error, resp) =>
         {
             if (error)
             {
-                return media.error(error);
+                return certificateManager.error(error);
             }
             console.log(JSON.stringify(resp, null, 2));
         }

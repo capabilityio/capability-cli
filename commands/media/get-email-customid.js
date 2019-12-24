@@ -18,19 +18,28 @@
 const CapabilitySDK = require("capability-sdk");
 const media = require("../media.js");
 
-exports.command = "getverificationstatus";
+exports.command = "get-email-customid";
 
-exports.desc = "Get verification status.";
+exports.desc = "Get email customId.";
 
 exports.builder = function(yargs)
 {
-    const group = "Get verification status:";
-    return yargs;
+    const group = "Get email customId:";
+    return yargs
+        .option("derivedId",
+            {
+                group,
+                describe: "Unique identifier for the email address that is derived from the email address.",
+                demandOption: true,
+                requiresArg: true,
+                type: "string"
+            }
+        );
 };
 
 exports.handler = function(args)
 {
-    const capability = media.capability(args, "getVerificationStatus");
+    const capability = media.capability(args, "getEmailCustomId");
     const service = new CapabilitySDK.Media(
         {
             tls:
@@ -39,7 +48,7 @@ exports.handler = function(args)
             }
         }
     );
-    service.getVerificationStatus(capability, (error, resp) =>
+    service.getEmailCustomId(capability, args.derivedId, (error, resp) =>
         {
             if (error)
             {

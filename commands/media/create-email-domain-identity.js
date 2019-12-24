@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 Capability LLC. All Rights Reserved.
+ * Copyright 2019 Capability LLC. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,21 +16,31 @@
 "use strict";
 
 const CapabilitySDK = require("capability-sdk");
-const certificateManager = require("../certificate-manager.js");
+const media = require("../media.js");
 
-exports.command = "delivercertificate";
+exports.command = "create-email-domain-identity";
 
-exports.desc = "Deliver certificate.";
+exports.desc = "Create EmailDomainIdentity.";
 
 exports.builder = function(yargs)
 {
-    return yargs;
+    const group = "Create EmailDomainIdentity:";
+    return yargs
+        .option("domain",
+            {
+                group,
+                describe: "Email domain to send emails from.",
+                demandOption: true,
+                requiresArg: true,
+                type: "string"
+            }
+        );
 };
 
 exports.handler = function(args)
 {
-    const capability = certificateManager.capability(args, "deliverCertificate");
-    const service = new CapabilitySDK.CertificateManager(
+    const capability = media.capability(args, "createEmailDomainIdentity");
+    const service = new CapabilitySDK.Media(
         {
             tls:
             {
@@ -38,11 +48,15 @@ exports.handler = function(args)
             }
         }
     );
-    service.deliverCertificate(capability, (error, resp) =>
+    service.createEmailDomainIdentity(capability,
+        {
+            domain: args.domain
+        },
+        (error, resp) =>
         {
             if (error)
             {
-                return certificateManager.error(error);
+                return media.error(error);
             }
             console.log(JSON.stringify(resp, null, 2));
         }

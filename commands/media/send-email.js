@@ -18,7 +18,7 @@
 const CapabilitySDK = require("capability-sdk");
 const media = require("../media.js");
 
-exports.command = "sendemail";
+exports.command = "send-email";
 
 exports.desc = "Send email.";
 

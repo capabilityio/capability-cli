@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 Capability LLC. All Rights Reserved.
+ * Copyright 2019 Capability LLC. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,21 +16,22 @@
 "use strict";
 
 const CapabilitySDK = require("capability-sdk");
-const certificateManager = require("../certificate-manager.js");
+const media = require("../media.js");
 
-exports.command = "deletedomain";
+exports.command = "delete-self";
 
-exports.desc = "Delete domain.";
+exports.desc = "Delete self.";
 
 exports.builder = function(yargs)
 {
+    const group = "Delete self:";
     return yargs;
 };
 
 exports.handler = function(args)
 {
-    const capability = certificateManager.capability(args, "deleteDomain");
-    const service = new CapabilitySDK.CertificateManager(
+    const capability = media.capability(args, "deleteSelf");
+    const service = new CapabilitySDK.Media(
         {
             tls:
             {
@@ -38,11 +39,11 @@ exports.handler = function(args)
             }
         }
     );
-    service.deleteDomain(capability, (error, resp) =>
+    service.deleteSelf(capability, (error, resp) =>
         {
             if (error)
             {
-                return certificateManager.error(error);
+                return media.error(error);
             }
             console.log(JSON.stringify(resp, null, 2));
         }

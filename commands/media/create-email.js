@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 Capability LLC. All Rights Reserved.
+ * Copyright 2019 Capability LLC. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,54 +16,49 @@
 "use strict";
 
 const CapabilitySDK = require("capability-sdk");
-const certificateManager = require("../certificate-manager.js");
+const media = require("../media.js");
 
-exports.command = "querydomains";
+exports.command = "create-email";
 
-exports.desc = "Query domains.";
+exports.desc = "Create email.";
 
 exports.builder = function(yargs)
 {
-    const group = "Query Domains:";
+    const group = "Create Email:";
     return yargs
-        .option("domain",
+        .option("customId",
             {
                 group,
-                describe: "Domain to query for.",
+                describe: "Unique identifier for the email address that is independent (not derived) from the email.",
+                demandOption: true,
                 requiresArg: true,
                 type: "string"
             }
         )
-        .option("last-domain",
+        .option("derivedId",
             {
                 group,
-                describe: "Last domain from previous query.",
+                describe: "Unique identifier for the email address that is derived from the email address.",
+                demandOption: true,
                 requiresArg: true,
                 type: "string"
             }
         )
-        .option("limit",
+        .option("email",
             {
                 group,
-                describe: "Limit number of results.",
-                coerce: opt =>
-                {
-                    if (parseInt(opt) <= 0)
-                    {
-                        throw new Error("--limit must be greater than 0");
-                    }
-                    return parseInt(opt);
-                },
+                describe: "Email address.",
+                demandOption: true,
                 requiresArg: true,
-                type: "number"
+                type: "string"
             }
         );
 };
 
 exports.handler = function(args)
 {
-    const capability = certificateManager.capability(args, "queryDomains");
-    const service = new CapabilitySDK.CertificateManager(
+    const capability = media.capability(args, "createEmail");
+    const service = new CapabilitySDK.Media(
         {
             tls:
             {
@@ -71,25 +66,17 @@ exports.handler = function(args)
             }
         }
     );
-    const params =
-    {
-        domain: args.domain,
-        lastDomain: args["last-domain"],
-        limit: args.limit
-    };
-    Object.keys(params).map(key =>
+    service.createEmail(capability,
         {
-            if (params[key] === undefined)
-            {
-                delete params[key];
-            }
-        }
-    );
-    service.queryDomains(capability, params, (error, resp) =>
+            customId: args.customId,
+            derivedId: args.derivedId,
+            email: args.email
+        },
+        (error, resp) =>
         {
             if (error)
             {
-                return certificateManager.error(error);
+                return media.error(error);
             }
             console.log(JSON.stringify(resp, null, 2));
         }
