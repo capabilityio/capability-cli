@@ -27,55 +27,10 @@ exports.builder = function(yargs)
 {
     const group = "Create Domain:";
     return yargs
-        .option("country",
-            {
-                group,
-                describe: "The two-letter ISO country code of the country where the organization is located.",
-                demandOption: true,
-                requiresArg: true,
-                type: "string"
-            }
-        )
         .option("domain",
             {
                 group,
                 describe: "Fully qualified domain name.",
-                demandOption: true,
-                requiresArg: true,
-                type: "string"
-            }
-        )
-        .option("locality",
-            {
-                group,
-                describe: "The location of the organization, usually a city.",
-                demandOption: true,
-                requiresArg: true,
-                type: "string"
-            }
-        )
-        .option("organization",
-            {
-                group,
-                describe: "Usually the legal incorporated name of a company and should include any suffixes such as Ltd., Inc., or Corp.",
-                demandOption: true,
-                requiresArg: true,
-                type: "string"
-            }
-        )
-        .option("organizational-unit",
-            {
-                group,
-                describe: "e.g. HR, Finance, IT.",
-                requiresArg: true,
-                type: "string"
-            }
-        )
-        .option("province",
-            {
-                group,
-                alias: "state",
-                describe: "The state or province where the organization is located.",
                 demandOption: true,
                 requiresArg: true,
                 type: "string"
@@ -137,14 +92,6 @@ exports.handler = function(args)
             {
                 receiveCertificate: args["receive-certificate-capability"],
                 updateChallenge: args["update-challenge-capability"]
-            },
-            subject:
-            {
-                country: args.country,
-                stateProvince: args.province,
-                locality: args.locality,
-                organization: args.organization,
-                organizationalUnit: args["organizational-unit"]
             }
         },
         (error, resp) =>
