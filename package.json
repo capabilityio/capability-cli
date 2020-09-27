@@ -6,7 +6,7 @@
     "capi": "bin/cli.js"
   },
   "dependencies": {
-    "aws-sdk": "2.713.0",
+    "aws-sdk": "2.761.0",
     "capability-config-fs": "0.1.0",
     "capability-sdk": "0.12.0",
     "capability-uri": "0.4.0",
@@ -14,7 +14,7 @@
     "lockfile": "1.0.4",
     "prompt": "1.0.0",
     "semver": "7.3.2",
-    "yargs": "15.4.1"
+    "yargs": "16.0.3"
   },
   "contributors": [
     "Tristan Slominski <tristan.slominski@gmail.com>"
