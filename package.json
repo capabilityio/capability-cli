@@ -8,7 +8,7 @@
   "dependencies": {
     "aws-sdk": "2.796.0",
     "capability-config-fs": "0.1.0",
-    "capability-sdk": "0.12.1",
+    "capability-sdk": "0.12.2",
     "capability-uri": "0.4.1",
     "js-yaml": "3.14.0",
     "lockfile": "1.0.4",
