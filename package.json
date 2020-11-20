@@ -1,6 +1,6 @@
 {
   "name": "capability-cli",
-  "version": "0.8.2",
+  "version": "0.8.3",
   "description": "Capability Services Command Line Interface (CLI)",
   "bin": {
     "capi": "bin/cli.js"
