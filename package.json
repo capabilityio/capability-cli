@@ -6,7 +6,7 @@
     "capi": "bin/cli.js"
   },
   "dependencies": {
-    "aws-sdk": "2.796.0",
+    "aws-sdk": "2.1693.0",
     "capability-config-fs": "0.1.0",
     "capability-sdk": "0.12.2",
     "capability-uri": "0.4.1",
